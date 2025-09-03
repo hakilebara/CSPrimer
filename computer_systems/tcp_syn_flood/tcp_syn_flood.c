@@ -77,32 +77,15 @@ int main(int argc, char* argv[]) {
     return EXIT_FAILURE;
   }
 
-  /* save the position of the end of the file in eof */
-  if (fseek(fp, 0, SEEK_END) != 0) {
-    perror("fseek() failed");
-    fclose(fp);
-    return EXIT_FAILURE;
-  }
-  int eof = ftell(fp);
-  if (eof == -1) {
-    perror("ftell() failed");
-    fclose(fp);
-    return EXIT_FAILURE;
-  }
-
-  if (fseek(fp, sizeof(PCAP_Header), SEEK_SET) != 0) {
-    perror("fseek() failed");
-    fclose(fp);
-    return EXIT_FAILURE;
-  } 
-
   int acc = 0;
   int outbound_syn_counter = 0;
   int outbound_synack_counter = 0;
 
-  while (ftell(fp) < eof) {
+  while (true) {
     Packet_Header packeth;
-    assert(fread(&packeth, sizeof(Packet_Header), 1, fp) == 1);
+    int packet_header_length = fread(&packeth, sizeof(Packet_Header), 1, fp);
+    assert(packet_header_length == 1 || packet_header_length == 0);
+    if (packet_header_length == 0) break; // we have ran out of packets to read
 
     uint32_t dataLength = packeth.packetDataLength;
 
